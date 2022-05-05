@@ -2,5 +2,5 @@
 applications:
 - name: sapcpcfhw
   path: .
-  buildpack: nodejs_buildpack
+  buildpack: https://github.com/cloudfoundry/nodejs-buildpack
   memory: 128M
