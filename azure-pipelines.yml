@@ -1,0 +1,45 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- 1_REST_persist_in_Memory
+
+jobs:
+  - job: downloadPiper
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - checkout: none
+    - task: Cache@2
+      inputs:
+        key: piper-go-official
+        path: bin
+        cacheHitVar: FOUND_PIPER
+      displayName: Cache piper go binary
+    - script: |
+          mkdir -p bin
+          curl -L --output bin/piper https://github.com/SAP/jenkins-library/releases/download/v1.199.0/piper
+          chmod +x bin/piper
+      condition: ne(variables.FOUND_PIPER, 'true')
+      displayName: 'Download Piper'
+    - script: bin/piper version
+      displayName: 'Piper Version'
+
+####### Piper Libraries #####
+
+  - job: cfDeploy
+    dependsOn: downloadPiper
+    variables:
+    - group: development
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Cache@2
+      inputs:
+        key: piper-go-official
+        path: bin 
+      displayName: deploy CloudFoundry
+    - script: |
+          bin/piper cloudFoundryDeploy --verbose --org $(CF-ORG) --password $(CF-PASSWORD) --space $(CF-SPACE) --username $(CF-USER)
